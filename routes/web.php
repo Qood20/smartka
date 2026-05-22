@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AiMonitorController;
 use App\Http\Controllers\Admin\AdminPackageController;
+use App\Http\Controllers\Admin\AdminSubjectController;
+use App\Http\Controllers\Admin\AdminTopicController;
 use App\Http\Controllers\Student\PackageController;
 use App\Http\Controllers\Student\SessionController;
 use App\Http\Controllers\Student\ReportController;
@@ -89,6 +91,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/paket', [AdminPackageController::class, 'index'])->name('paket.index');
     Route::get('/paket/tambah', [AdminPackageController::class, 'create'])->name('paket.create');
     Route::post('/paket', [AdminPackageController::class, 'store'])->name('paket.store');
+    Route::get('/paket/{package}/edit', [AdminPackageController::class, 'edit'])->name('paket.edit');
+    Route::put('/paket/{package}', [AdminPackageController::class, 'update'])->name('paket.update');
+    Route::delete('/paket/{package}', [AdminPackageController::class, 'destroy'])->name('paket.destroy');
     
     // Paket Import via Excel
     Route::get('/paket/import/template', [AdminPackageController::class, 'downloadTemplate'])->name('paket.import.template');
@@ -97,9 +102,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     // Pengguna
     Route::get('/pengguna', [AdminUserController::class, 'index'])->name('pengguna.index');
+    Route::get('/pengguna/tambah', [AdminUserController::class, 'create'])->name('pengguna.create');
+    Route::post('/pengguna', [AdminUserController::class, 'store'])->name('pengguna.store');
     Route::get('/pengguna/{user}', [AdminUserController::class, 'show'])->name('pengguna.show');
+    Route::get('/pengguna/{user}/edit', [AdminUserController::class, 'edit'])->name('pengguna.edit');
+    Route::put('/pengguna/{user}', [AdminUserController::class, 'update'])->name('pengguna.update');
+    Route::delete('/pengguna/{user}', [AdminUserController::class, 'destroy'])->name('pengguna.destroy');
     Route::post('/pengguna/{user}/suspend', [AdminUserController::class, 'suspend'])->name('pengguna.suspend');
     Route::post('/pengguna/{user}/upgrade', [AdminUserController::class, 'upgrade'])->name('pengguna.upgrade');
+
+    // Mata Pelajaran
+    Route::resource('mata-pelajaran', AdminSubjectController::class)->parameters(['mata-pelajaran' => 'mata_pelajaran']);
+
+    // Topik / Bab
+    Route::resource('topik', AdminTopicController::class)->parameters(['topik' => 'topik']);
 
     // AI Monitor
     Route::get('/ai-monitor', [AiMonitorController::class, 'index'])->name('ai-monitor.index');
