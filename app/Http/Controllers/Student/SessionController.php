@@ -22,7 +22,7 @@ class SessionController extends Controller
         $user = Auth::user();
 
         // Authorization check
-        if ($user->class_level !== $package->class_level || $package->status !== 'active') {
+        if ($user->class_level !== $package->class_level || $package->status !== 'published') {
             abort(403, 'Akses ditolak.');
         }
 
@@ -119,6 +119,10 @@ class SessionController extends Controller
             } else {
                 // Trim dan case-insensitive untuk isian singkat / benar-salah
                 $isCorrect = (trim(strtolower($request->selected_answer)) === trim(strtolower($question->correct_answer)));
+                // Untuk soal essay (short_answer)
+                $studentAns = preg_replace('/\s+/', ' ', strtolower(trim($request->selected_answer)));
+                $correctAns = preg_replace('/\s+/', ' ', strtolower(trim($question->correct_answer)));
+                $isCorrect = ($studentAns === $correctAns);
             }
         }
 
