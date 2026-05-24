@@ -37,19 +37,26 @@ class AdminPackageController extends Controller
         $request->validate([
             'name'             => 'required|string|max:200',
             'class_level'      => 'required|in:6,9,12',
-            'duration_minutes' => 'required|integer|min:10',
+            'duration_minutes' => 'required_if:is_tryout,1|nullable|integer|min:10',
             'type'             => 'required|in:free,premium',
             'status'           => 'required|in:draft,published',
+            'is_tryout'        => 'sometimes|boolean',
             'question_ids'     => 'required|array|min:1',
             'question_ids.*'   => 'exists:questions,id',
         ]);
 
+        $packageName = $request->name;
+        if ($request->boolean('is_tryout') && !preg_match('/try\s*out/i', $packageName)) {
+            $packageName = 'Try Out - ' . $packageName;
+        }
+
         $package = TestPackage::create([
-            'name'             => $request->name,
+            'name'             => $packageName,
             'description'      => $request->description,
             'class_level'      => $request->class_level,
             'total_questions'  => count($request->question_ids),
-            'duration_minutes' => $request->duration_minutes,
+            // For non-tryout (latihan) packages we store 0 to indicate untimed
+            'duration_minutes' => $request->boolean('is_tryout') ? $request->duration_minutes : 0,
             'type'             => $request->type,
             'is_randomized'    => $request->boolean('is_randomized'),
             'available_from'   => $request->available_from,
@@ -81,11 +88,27 @@ class AdminPackageController extends Controller
     {
         $request->validate([
             'name'             => 'required|string|max:200',
-            'duration_minutes' => 'required|integer|min:10',
+            'duration_minutes' => 'required_if:is_tryout,1|nullable|integer|min:10',
             'status'           => 'required|in:draft,published',
+            'is_tryout'        => 'sometimes|boolean',
         ]);
 
-        $package->update($request->except(['_token', '_method', 'question_ids']));
+        $data = $request->except(['_token', '_method', 'question_ids']);
+
+        // Set duration to 0 for latihan (untimed) when not tryout
+        $data['duration_minutes'] = $request->boolean('is_tryout') ? $request->duration_minutes : 0;
+
+        // Handle tryout name prefix
+        $isTryout = $request->boolean('is_tryout');
+        $name = $data['name'] ?? $package->name;
+        if ($isTryout && !preg_match('/try\s*out/i', $name)) {
+            $name = 'Try Out - ' . $name;
+        } elseif (!$isTryout && preg_match('/^Try Out\s*-\s*/i', $name)) {
+            $name = preg_replace('/^Try\s*Out\s*-\s*/i', '', $name);
+        }
+        $data['name'] = $name;
+
+        $package->update($data);
 
         if ($request->filled('question_ids')) {
             $package->questions()->detach();
@@ -161,8 +184,9 @@ class AdminPackageController extends Controller
             'class_level'      => 'required|in:6,9,12',
             'subject_id'       => 'required|exists:subjects,id',
             'topic_name'       => 'required|string|max:100',
-            'duration_minutes' => 'required|integer|min:10',
+            'duration_minutes' => 'required_if:is_tryout,1|nullable|integer|min:10',
             'type'             => 'required|in:free,premium',
+            'is_tryout'        => 'sometimes|boolean',
         ]);
 
         try {
@@ -229,11 +253,16 @@ class AdminPackageController extends Controller
             }
 
             // Buat Paket
+            $packageName = $request->name;
+            if ($request->boolean('is_tryout') && !preg_match('/try\s*out/i', $packageName)) {
+                $packageName = 'Try Out - ' . $packageName;
+            }
+
             $package = TestPackage::create([
-                'name'             => $request->name,
+                'name'             => $packageName,
                 'class_level'      => $request->class_level,
                 'total_questions'  => count($questionIds),
-                'duration_minutes' => $request->duration_minutes,
+                'duration_minutes' => $request->boolean('is_tryout') ? $request->duration_minutes : 0,
                 'type'             => $request->type,
                 'is_randomized'    => true,
                 'status'           => 'published',
