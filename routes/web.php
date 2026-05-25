@@ -93,6 +93,7 @@ Route::middleware('auth')->group(function () {
     // Setup kelas (untuk user baru via Google OAuth)
     Route::get('/setup-kelas',   [GoogleController::class, 'showSetupKelas'])->name('setup.kelas');
     Route::post('/setup-kelas',  [GoogleController::class, 'saveSetupKelas'])->name('setup.kelas.save');
+    Route::delete('/akun/remove-avatar',   [AccountController::class, 'removeAvatar'])->name('akun.remove-avatar');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
