@@ -155,8 +155,17 @@ class SessionController extends Controller
         $user = Auth::user();
 
         // Authorization check
-        if ($session->user_id !== $user->id || $session->status !== 'ongoing') {
-            abort(403, 'Akses ditolak atau sesi sudah selesai.');
+        if ($session->user_id !== $user->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // If session is already completed, just redirect to results (handles race conditions)
+        if ($session->status === 'completed') {
+            return redirect()->route('latihan.hasil', $session->id);
+        }
+
+        if ($session->status !== 'ongoing') {
+            abort(403, 'Sesi tidak valid.');
         }
 
         // Update session status and finished_at timestamp

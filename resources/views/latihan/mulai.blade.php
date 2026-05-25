@@ -143,15 +143,17 @@
             <p class="text-gray-500 dark:text-gray-400">Pastikan semua soal sudah terjawab dengan benar. Jawaban tidak dapat diubah setelah latihan diakhiri.</p>
         </div>
         
-        <form action="{{ route('latihan.finish', $session->id) }}" method="POST" class="flex gap-4">
+        <form action="{{ route('latihan.finish', $session->id) }}" method="POST" class="flex gap-4" @submit="isSubmitting = true">
             @csrf
             <button type="button" onclick="document.getElementById('finishModal').classList.add('hidden')" 
                 class="flex-1 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-700">
                 Batal
             </button>
             <button type="submit" 
-                class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700">
-                Ya, Akhiri
+                class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50"
+                :disabled="isSubmitting">
+                <span x-show="!isSubmitting">Ya, Akhiri</span>
+                <span x-show="isSubmitting">Memproses...</span>
             </button>
         </form>
     </div>
@@ -161,6 +163,7 @@
     // Inisialisasi Timer
     let durationSeconds = {{ $package->duration_minutes * 60 }};
     let timeSpent = {{ $session->time_spent_seconds }};
+    let timerInterval = null;
 
     if (durationSeconds > 0) {
         let remainingTime = Math.max(0, durationSeconds - timeSpent);
@@ -175,12 +178,13 @@
                 remainingTime--;
                 timeSpent++;
             } else {
-                // Waktu habis, submit form otomatis
+                // Waktu habis, hentikan timer dan submit otomatis
+                clearInterval(timerInterval);
                 document.querySelector('#finishModal form').submit();
             }
         }
 
-        setInterval(updateTimer, 1000);
+        timerInterval = setInterval(updateTimer, 1000);
         updateTimer();
     }
 
@@ -193,6 +197,7 @@
             saveStatus: false,
             saveTimeout: null,
             timeSpentSinceLastSave: 0,
+            isSubmitting: false,
 
             getAnswer(questionId) {
                 if (this.answers[questionId] && this.answers[questionId].selected_answer !== null) {
